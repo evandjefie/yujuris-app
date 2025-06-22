@@ -152,7 +152,7 @@ async function searchCNDJ(query: string): Promise<any[]> {
 async function searchOHADASources(query: string, country: string): Promise<any[]> {
   const sources = [
     'https://www.ohada.org',
-    'https://juriscope.org',
+    // 'https://juristic.ci',
     'https://www.droit-afrique.com'
   ]
 
