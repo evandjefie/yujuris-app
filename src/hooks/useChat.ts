@@ -13,7 +13,7 @@ export const useChat = () => {
     }
   ]);
   const [isTyping, setIsTyping] = useState(false);
-  const { user } = useAuth();
+  const { user, decrementQueries } = useAuth();
   const { searchLegal, isSearching } = useLegalSearch();
 
   const canSendMessage = useCallback(() => {
@@ -66,10 +66,9 @@ export const useChat = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Decrease remaining queries for free users
-      if (user && user.plan === 'free' && user.remainingQueries) {
-        const updatedUser = { ...user, remainingQueries: user.remainingQueries - 1 };
-        localStorage.setItem('yujuris_user', JSON.stringify(updatedUser));
+      // Decrease remaining queries for free users using Supabase
+      if (user && user.plan === 'free') {
+        await decrementQueries();
       }
 
     } catch (error) {
@@ -90,7 +89,7 @@ export const useChat = () => {
     }
 
     return true;
-  }, [canSendMessage, user, searchLegal]);
+  }, [canSendMessage, user, searchLegal, decrementQueries]);
 
   const clearChat = useCallback(() => {
     setMessages([

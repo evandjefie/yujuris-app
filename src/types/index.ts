@@ -4,6 +4,9 @@ export interface User {
   name: string;
   plan: 'free' | 'premium';
   remainingQueries?: number;
+  avatar_url?: string;
+  email_verified?: boolean;
+  created_at?: string;
 }
 
 export interface ChatMessage {
@@ -17,9 +20,11 @@ export interface ChatMessage {
 
 export interface LegalSource {
   title: string;
-  article: string;
+  article?: string;
   code: string;
   url?: string;
+  excerpt?: string;
+  relevance?: number;
 }
 
 export interface Document {
@@ -62,4 +67,9 @@ export interface LegalArticle {
   article: string;
   content: string;
   lastUpdated: Date;
+}
+
+export interface AuthError {
+  message: string;
+  status?: number;
 }
