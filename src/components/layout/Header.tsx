@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Scale, Menu, User, Moon, Sun, Globe, Crown, Settings } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../hooks/useAuth';
@@ -22,14 +22,39 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, openAuthModal, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setShowLangMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleAuthClick = () => {
+    console.log('Opening auth modal...');
+    openAuthModal();
+  };
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm dark:shadow-gray-900/20">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm dark:shadow-gray-900/20 relative z-40">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button 
             onClick={onMenuToggle}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Toggle menu"
           >
             <Menu size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
@@ -54,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="flex items-center space-x-3">
           {/* Language Selector */}
-          <div className="relative">
+          <div className="relative" ref={langMenuRef}>
             <button
               onClick={() => setShowLangMenu(!showLangMenu)}
               className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -66,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             
             {showLangMenu && (
-              <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
                 {Object.entries(LANGUAGES).map(([key, lang]) => (
                   <button
                     key={key}
@@ -99,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* User Menu */}
           {user ? (
-            <div className="relative">
+            <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -131,7 +156,7 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
@@ -191,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <Button onClick={openAuthModal} size="sm">
+            <Button onClick={handleAuthClick} size="sm">
               Connexion
             </Button>
           )}

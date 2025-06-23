@@ -301,8 +301,15 @@ export const useAuth = () => {
     }
   };
 
-  const openAuthModal = () => setIsModalOpen(true);
-  const closeAuthModal = () => setIsModalOpen(false);
+  const openAuthModal = () => {
+    console.log('Opening auth modal...');
+    setIsModalOpen(true);
+  };
+  
+  const closeAuthModal = () => {
+    console.log('Closing auth modal...');
+    setIsModalOpen(false);
+  };
 
   return {
     user,

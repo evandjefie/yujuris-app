@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, FileText, BookOpen, BookTemplate as FileTemplate, Crown, Plus, History, Sparkles } from 'lucide-react';
+import { MessageCircle, FileText, BookOpen, BookTemplate as FileTemplate, Crown, Plus, History, Sparkles, X } from 'lucide-react';
 import { COLORS } from '../../constants';
 
 interface SidebarProps {
@@ -72,12 +72,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 z-30 h-full w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+        fixed top-0 left-0 z-30 h-screen w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
         transform transition-transform duration-300 ease-in-out shadow-xl dark:shadow-gray-900/50
-        lg:relative lg:translate-x-0
+        lg:relative lg:translate-x-0 lg:h-full
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex flex-col h-full pt-16">
+        <div className="flex flex-col h-full">
+          {/* Header with close button for mobile */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 lg:hidden">
+            <div className="flex items-center space-x-3">
+              <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                style={{ backgroundColor: COLORS.primary }}
+              >
+                <Sparkles size={16} />
+              </div>
+              <span className="font-semibold text-gray-900 dark:text-white">Menu</span>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Fermer le menu"
+            >
+              <X size={20} className="text-gray-600 dark:text-gray-300" />
+            </button>
+          </div>
+
           {/* New Chat Button */}
           <div className="p-4">
             <button
@@ -92,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Navigation Menu */}
-          <nav className="flex-1 px-4 pb-4">
+          <nav className="flex-1 px-4 pb-4 overflow-y-auto">
             <ul className="space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
