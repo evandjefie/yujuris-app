@@ -137,6 +137,7 @@ function App() {
         currentLanguage={currentLanguage}
         onLanguageChange={handleLanguageChange}
       />
+<Button onClick={openAuthModal}>Ouvrir modal</Button>
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
