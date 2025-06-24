@@ -14,7 +14,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<keyof typeof LANGUAGES>('FR');
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isModalOpen } = useAuth();
 
   // Initialize theme
   useEffect(() => {
