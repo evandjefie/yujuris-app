@@ -14,8 +14,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<keyof typeof LANGUAGES>('FR');
-  const { user, isLoading, isModalOpen } = useAuth();
-  console.log('App render, modal open =', isModalOpen);
+  const { user, isLoading, isModalOpen, closeAuthModal } = useAuth();
 
   // Initialize theme
   useEffect(() => {
@@ -154,7 +153,6 @@ function App() {
         </main>
       </div>
 
-      {/* <AuthModal /> */}
       {isModalOpen && <AuthModal />}
     </div>
   );
