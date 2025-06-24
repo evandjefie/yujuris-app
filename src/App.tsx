@@ -16,6 +16,8 @@ function App() {
   const [currentLanguage, setCurrentLanguage] = useState<keyof typeof LANGUAGES>('FR');
   const { user, isLoading, isModalOpen, closeAuthModal } = useAuth();
 
+  console.log('App render, modal open =', isModalOpen);
+
   // Initialize theme
   useEffect(() => {
     const savedTheme = localStorage.getItem('yujuris_theme');
