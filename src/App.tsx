@@ -15,6 +15,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<keyof typeof LANGUAGES>('FR');
   const { user, isLoading, isModalOpen } = useAuth();
+  console.log('App render, modal open =', isModalOpen);
 
   // Initialize theme
   useEffect(() => {
