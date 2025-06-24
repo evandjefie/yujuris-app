@@ -19,11 +19,16 @@ export const Header: React.FC<HeaderProps> = ({
   currentLanguage,
   onLanguageChange
 }) => {
-  const { user, openAuthModal, logout } = useAuth();
+  const { user, openAuthModal, logout, isModalOpen, debugModal } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
+
+  // Debug: Log modal state changes
+  useEffect(() => {
+    console.log('Header - Modal state changed:', isModalOpen);
+  }, [isModalOpen]);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -42,9 +47,23 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
-  const handleAuthClick = () => {
-    console.log('Opening auth modal...');
+  const handleAuthClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Auth button clicked!');
+    console.log('Current user:', user);
+    console.log('Current modal state before opening:', isModalOpen);
+    
+    // Debug current state first
+    debugModal();
+    
+    // Then open modal
     openAuthModal();
+    
+    // Verify after opening
+    setTimeout(() => {
+      console.log('Modal state after opening (delayed check):', isModalOpen);
+    }, 100);
   };
 
   return (
@@ -78,6 +97,19 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* Debug Button - TEMPORAIRE */}
+          <button
+            onClick={() => {
+              console.log('=== DEBUG INFO ===');
+              console.log('User:', user);
+              console.log('Modal Open:', isModalOpen);
+              debugModal();
+            }}
+            className="px-2 py-1 text-xs bg-red-500 text-white rounded"
+          >
+            Debug
+          </button>
+
           {/* Language Selector */}
           <div className="relative" ref={langMenuRef}>
             <button
@@ -216,8 +248,16 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <Button onClick={handleAuthClick} size="sm">
+            <Button 
+              onClick={handleAuthClick} 
+              size="sm"
+              className="relative"
+            >
               Connexion
+              {/* Indicateur visuel si la modal est ouverte */}
+              {isModalOpen && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></span>
+              )}
             </Button>
           )}
         </div>
