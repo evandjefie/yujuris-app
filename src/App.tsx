@@ -154,7 +154,7 @@ function App() {
           {renderMainContent()}
         </main>
       </div>
-
+<Button onClick={openAuthModal}>Ouvrir modal</Button>
       {isModalOpen && <AuthModal />}
     </div>
   );
