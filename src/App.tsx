@@ -5,7 +5,7 @@ import { ChatInterface } from './components/chat/ChatInterface';
 import { DocumentAnalysis } from './components/documents/DocumentAnalysis';
 import { TemplateGenerator } from './components/templates/TemplateGenerator';
 import { LegalLibrary } from './components/library/LegalLibrary';
-import { AuthModal } from './components/auth/AuthModal';
+import { AuthPage } from './pages/AuthPage';
 import { useAuth } from './hooks/useAuth';
 import { COLORS, LANGUAGES } from './constants';
 
@@ -14,9 +14,8 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<keyof typeof LANGUAGES>('FR');
-  const { user, isLoading, isModalOpen, closeAuthModal } = useAuth();
-
-  console.log('App render, modal open =', isModalOpen);
+  const [showAuthPage, setShowAuthPage] = useState(false);
+  const { user, isLoading } = useAuth();
 
   // Initialize theme
   useEffect(() => {
@@ -41,6 +40,13 @@ function App() {
     }
   }, []);
 
+  // Close auth page when user logs in
+  useEffect(() => {
+    if (user && showAuthPage) {
+      setShowAuthPage(false);
+    }
+  }, [user, showAuthPage]);
+
   const handleThemeToggle = () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
@@ -56,10 +62,18 @@ function App() {
     localStorage.setItem('yujuris_language', lang);
   };
 
+  const handleOpenAuth = () => {
+    setShowAuthPage(true);
+  };
+
+  const handleCloseAuth = () => {
+    setShowAuthPage(false);
+  };
+
   const renderMainContent = () => {
     switch (activeView) {
       case 'chat':
-        return <ChatInterface />;
+        return <ChatInterface onOpenAuth={handleOpenAuth} />;
       case 'documents':
         return <DocumentAnalysis />;
       case 'templates':
@@ -103,7 +117,7 @@ function App() {
           </div>
         );
       default:
-        return <ChatInterface />;
+        return <ChatInterface onOpenAuth={handleOpenAuth} />;
     }
   };
 
@@ -128,10 +142,16 @@ function App() {
     );
   }
 
+  // Show auth page if requested
+  if (showAuthPage) {
+    return <AuthPage onBack={handleCloseAuth} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <Header
         onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        onOpenAuth={handleOpenAuth}
         isDarkMode={isDarkMode}
         onThemeToggle={handleThemeToggle}
         currentLanguage={currentLanguage}
@@ -154,7 +174,6 @@ function App() {
           {renderMainContent()}
         </main>
       </div>
-      {isModalOpen && <AuthModal />}
     </div>
   );
 }

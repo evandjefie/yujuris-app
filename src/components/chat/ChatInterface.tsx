@@ -6,13 +6,17 @@ import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
 import { COLORS, OHADA_COUNTRIES } from '../../constants';
 
-export const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+  onOpenAuth: () => void;
+}
+
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onOpenAuth }) => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
   const { messages, isTyping, canSendMessage, sendMessage } = useChat();
-  const { user, openAuthModal } = useAuth();
+  const { user } = useAuth();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -26,7 +30,7 @@ export const ChatInterface: React.FC = () => {
     e.preventDefault();
     
     if (!user) {
-      openAuthModal();
+      onOpenAuth();
       return;
     }
 

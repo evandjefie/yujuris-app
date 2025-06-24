@@ -1,4 +1,3 @@
-// Header.tsx - VERSION AMELIOREE
 import React, { useState, useRef, useEffect } from 'react';
 import { Scale, Menu, User, Moon, Sun, Globe, Crown, Settings } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -7,6 +6,7 @@ import { COLORS, LANGUAGES, PLANS } from '../../constants';
 
 interface HeaderProps {
   onMenuToggle: () => void;
+  onOpenAuth: () => void;
   isDarkMode: boolean;
   onThemeToggle: () => void;
   currentLanguage: keyof typeof LANGUAGES;
@@ -15,12 +15,13 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   onMenuToggle,
+  onOpenAuth,
   isDarkMode,
   onThemeToggle,
   currentLanguage,
   onLanguageChange
 }) => {
-  const { user, openAuthModal, logout, isModalOpen } = useAuth();
+  const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -53,8 +54,8 @@ export const Header: React.FC<HeaderProps> = ({
     setShowUserMenu(false);
     setShowLangMenu(false);
     
-    // Open the authentication modal
-    openAuthModal();
+    // Open the authentication page
+    onOpenAuth();
   };
 
   const handleUserMenuToggle = () => {
@@ -258,9 +259,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={handleAuthClick} 
               size="sm"
               className="relative font-medium"
-              disabled={isModalOpen}
             >
-              {isModalOpen ? 'Ouverture...' : 'Connexion'}
+              Connexion
             </Button>
           )}
         </div>

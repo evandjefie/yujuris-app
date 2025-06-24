@@ -6,7 +6,6 @@ import { User, AuthError } from '../types';
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -122,7 +121,6 @@ export const useAuth = () => {
         };
       }
 
-      setIsModalOpen(false);
       return { user: user, error: null };
 
     } catch (error) {
@@ -157,7 +155,7 @@ export const useAuth = () => {
         };
       }
 
-      // If email confirmation is disabled, close modal
+      // If email confirmation is disabled, user will be logged in automatically
       if (data.user && !data.user.email_confirmed_at) {
         // Email confirmation required
         return {
@@ -166,7 +164,6 @@ export const useAuth = () => {
         };
       }
 
-      setIsModalOpen(false);
       return { user: user, error: null };
 
     } catch (error) {
@@ -301,29 +298,16 @@ export const useAuth = () => {
     }
   };
 
-  const openAuthModal = () => {
-    console.log('Opening auth modal...');
-    setIsModalOpen(true);
-  };
-  
-  const closeAuthModal = () => {
-    console.log('Closing auth modal...');
-    setIsModalOpen(false);
-  };
-
   return {
     user,
     isLoading,
-    isModalOpen,
     login,
     register,
     logout,
     resetPassword,
     updateProfile,
     upgradeToPremium,
-    decrementQueries,
-    openAuthModal,
-    closeAuthModal
+    decrementQueries
   };
 };
 
