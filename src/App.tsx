@@ -153,7 +153,8 @@ function App() {
         </main>
       </div>
 
-      <AuthModal />
+      {/* <AuthModal /> */}
+      {isModalOpen && <AuthModal />}
     </div>
   );
 }
