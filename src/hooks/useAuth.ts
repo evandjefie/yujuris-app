@@ -49,14 +49,38 @@ export const useAuth = () => {
 
   const handleUserSession = async (supabaseUser: SupabaseUser) => {
     try {
+      // Attendre un peu pour que le trigger ait le temps de s'exécuter
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Get or create user profile
-      const { data: profile, error } = await supabase
+      let { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      // Si le profil n'existe pas, essayer de le créer
+      if (error && error.code === 'PGRST116') {
+        console.log('Profil non trouvé, création en cours...');
+        
+        const { error: createError } = await supabase.rpc('create_user_profile', {
+          user_id: supabaseUser.id,
+          user_name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'Utilisateur',
+          user_email: supabaseUser.email || ''
+        });
+
+        if (createError) {
+          console.error('Erreur lors de la création du profil:', createError);
+        } else {
+          // Récupérer le profil créé
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', supabaseUser.id)
+            .single();
+          profile = newProfile;
+        }
+      } else if (error) {
         console.error('Erreur lors de la récupération du profil:', error);
       }
 
@@ -73,34 +97,8 @@ export const useAuth = () => {
 
       setUser(userData);
 
-      // Create profile if it doesn't exist
-      if (!profile) {
-        await createUserProfile(userData);
-      }
-
     } catch (error) {
       console.error('Erreur lors du traitement de la session utilisateur:', error);
-    }
-  };
-
-  const createUserProfile = async (userData: User) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .insert({
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          plan: userData.plan,
-          remaining_queries: userData.remainingQueries,
-          avatar_url: userData.avatar_url
-        });
-
-      if (error) {
-        console.error('Erreur lors de la création du profil:', error);
-      }
-    } catch (error) {
-      console.error('Erreur inattendue lors de la création du profil:', error);
     }
   };
 
@@ -155,22 +153,29 @@ export const useAuth = () => {
         };
       }
 
-      // If email confirmation is disabled, user will be logged in automatically
-      if (data.user && !data.user.email_confirmed_at) {
-        // Email confirmation required
-        return {
-          user: null,
-          error: null // No error, just need confirmation
-        };
+      // Si l'utilisateur est créé avec succès
+      if (data.user) {
+        // Attendre que le profil soit créé
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Si email confirmation est désactivée, l'utilisateur sera connecté automatiquement
+        if (!data.user.email_confirmed_at) {
+          // Email confirmation required
+          return {
+            user: null,
+            error: null // No error, just need confirmation
+          };
+        }
       }
 
       return { user: user, error: null };
 
     } catch (error) {
+      console.error('Erreur lors de l\'inscription:', error);
       return {
         user: null,
         error: {
-          message: 'Une erreur inattendue s\'est produite'
+          message: 'Une erreur inattendue s\'est produite lors de l\'inscription'
         }
       };
     }
