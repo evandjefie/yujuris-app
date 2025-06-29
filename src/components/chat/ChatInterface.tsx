@@ -15,7 +15,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onOpenAuth }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const { messages, isTyping, canSendMessage, sendMessage } = useChat();
+  const { messages, isTyping, isLoading, canSendMessage, sendMessage } = useChat();
   const { user } = useAuth();
 
   const scrollToBottom = () => {
@@ -61,6 +61,75 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ onOpenAuth }) => {
     "Comment rédiger un contrat de bail commercial ?",
     "Procédure de recouvrement de créances au Mali"
   ];
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+        {/* Chat Header */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center space-x-3 mb-2">
+                <div 
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+                  style={{ backgroundColor: COLORS.primary }}
+                >
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Assistant Juridique OHADA
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Spécialisé dans les 17 pays de l'espace OHADA • IA avancée
+                  </p>
+                </div>
+              </div>
+              
+              {/* OHADA Countries Indicator */}
+              <div className="flex items-center space-x-2 mt-3">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Couverture:</span>
+                <div className="flex space-x-1">
+                  {OHADA_COUNTRIES.slice(0, 8).map((country) => (
+                    <span key={country.code} className="text-sm" title={country.name}>
+                      {country.flag}
+                    </span>
+                  ))}
+                  <span className="text-xs text-gray-400 ml-1">+9 autres</span>
+                </div>
+              </div>
+            </div>
+            
+            {user?.plan === 'premium' && (
+              <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <Crown size={16} className="text-yellow-600 dark:text-yellow-400" />
+                <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Premium</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Loading State */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div 
+              className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center text-white shadow-lg"
+              style={{ backgroundColor: COLORS.primary }}
+            >
+              <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Chargement de votre conversation
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Récupération de vos messages précédents...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">

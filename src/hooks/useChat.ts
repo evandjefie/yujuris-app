@@ -1,20 +1,153 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, LegalSource } from '../types';
 import { useAuth } from './useAuth';
 import { useLegalSearch } from './useLegalSearch';
+import { supabase } from '../lib/supabase';
 
 export const useChat = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      content: 'Bonjour ! Je suis votre assistant juridique spécialisé en droit OHADA et droit ivoirien. Je peux vous aider avec :\n\n• Questions sur le droit des sociétés commerciales\n• Procédures civiles et commerciales\n• Droit du travail dans l\'espace OHADA\n• Rédaction de contrats et documents juridiques\n• Interprétation des textes OHADA et du droit ivoirien\n\nMes réponses sont basées sur des recherches en temps réel dans la bibliothèque CNDJ et les sources officielles OHADA.\n\nComment puis-je vous assister aujourd\'hui ?',
-      sender: 'assistant',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const { user, decrementQueries } = useAuth();
   const { searchLegal, isSearching } = useLegalSearch();
+
+  // Load conversations when user is available
+  useEffect(() => {
+    if (user) {
+      loadOrCreateConversation();
+    } else {
+      // Show welcome message for non-authenticated users
+      setMessages([getWelcomeMessage()]);
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  const getWelcomeMessage = (): ChatMessage => ({
+    id: '1',
+    content: 'Bonjour ! Je suis votre assistant juridique spécialisé en droit OHADA et droit ivoirien. Je peux vous aider avec :\n\n• Questions sur le droit des sociétés commerciales\n• Procédures civiles et commerciales\n• Droit du travail dans l\'espace OHADA\n• Rédaction de contrats et documents juridiques\n• Interprétation des textes OHADA et du droit ivoirien\n\nMes réponses sont basées sur des recherches en temps réel dans la bibliothèque CNDJ et les sources officielles OHADA.\n\nComment puis-je vous assister aujourd\'hui ?',
+    sender: 'assistant',
+    timestamp: new Date()
+  });
+
+  const loadOrCreateConversation = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+
+      // Try to get the most recent conversation
+      const { data: conversations, error: convError } = await supabase
+        .from('chat_conversations')
+        .select('id, title, last_message_at')
+        .eq('user_id', user.id)
+        .eq('is_archived', false)
+        .order('last_message_at', { ascending: false })
+        .limit(1);
+
+      if (convError) {
+        console.error('Error loading conversations:', convError);
+        setMessages([getWelcomeMessage()]);
+        setIsLoading(false);
+        return;
+      }
+
+      let conversationId: string;
+
+      if (conversations && conversations.length > 0) {
+        // Use existing conversation
+        conversationId = conversations[0].id;
+        setCurrentConversationId(conversationId);
+
+        // Load messages from this conversation
+        const { data: chatMessages, error: msgError } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
+
+        if (msgError) {
+          console.error('Error loading messages:', msgError);
+          setMessages([getWelcomeMessage()]);
+        } else if (chatMessages && chatMessages.length > 0) {
+          // Convert database messages to ChatMessage format
+          const formattedMessages: ChatMessage[] = chatMessages.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            sender: msg.role as 'user' | 'assistant',
+            timestamp: new Date(msg.created_at),
+            sources: msg.metadata?.sources || []
+          }));
+          setMessages(formattedMessages);
+        } else {
+          // Conversation exists but no messages, add welcome message
+          setMessages([getWelcomeMessage()]);
+        }
+      } else {
+        // Create new conversation
+        const { data: newConv, error: createError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            user_id: user.id,
+            title: 'Nouvelle conversation',
+            description: 'Consultation juridique OHADA'
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating conversation:', createError);
+          setMessages([getWelcomeMessage()]);
+        } else {
+          conversationId = newConv.id;
+          setCurrentConversationId(conversationId);
+          
+          // Add welcome message to new conversation
+          const welcomeMessage = getWelcomeMessage();
+          setMessages([welcomeMessage]);
+          
+          // Save welcome message to database
+          await saveMessageToDatabase(welcomeMessage, conversationId);
+        }
+      }
+    } catch (error) {
+      console.error('Error in loadOrCreateConversation:', error);
+      setMessages([getWelcomeMessage()]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveMessageToDatabase = async (message: ChatMessage, conversationId: string) => {
+    if (!user || !conversationId) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          user_id: user.id,
+          role: message.sender,
+          content: message.content,
+          metadata: {
+            sources: message.sources || []
+          }
+        });
+
+      if (error) {
+        console.error('Error saving message:', error);
+      }
+
+      // Update conversation last_message_at
+      await supabase
+        .from('chat_conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
+    } catch (error) {
+      console.error('Error in saveMessageToDatabase:', error);
+    }
+  };
 
   const canSendMessage = useCallback(() => {
     if (!user) return false;
@@ -23,7 +156,7 @@ export const useChat = () => {
   }, [user]);
 
   const sendMessage = useCallback(async (content: string) => {
-    if (!canSendMessage()) return false;
+    if (!canSendMessage() || !user) return false;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -34,6 +167,11 @@ export const useChat = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
+
+    // Save user message to database
+    if (currentConversationId) {
+      await saveMessageToDatabase(userMessage, currentConversationId);
+    }
 
     try {
       // Use the legal search function with Gemini AI
@@ -66,6 +204,11 @@ export const useChat = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
 
+      // Save assistant message to database
+      if (currentConversationId) {
+        await saveMessageToDatabase(assistantMessage, currentConversationId);
+      }
+
       // Decrease remaining queries for free users using Supabase
       if (user && user.plan === 'free') {
         await decrementQueries();
@@ -84,27 +227,57 @@ export const useChat = () => {
       };
 
       setMessages(prev => [...prev, errorMessage]);
+
+      // Save error message to database
+      if (currentConversationId) {
+        await saveMessageToDatabase(errorMessage, currentConversationId);
+      }
     } finally {
       setIsTyping(false);
     }
 
     return true;
-  }, [canSendMessage, user, searchLegal, decrementQueries]);
+  }, [canSendMessage, user, currentConversationId, searchLegal, decrementQueries]);
 
-  const clearChat = useCallback(() => {
-    setMessages([
-      {
-        id: '1',
-        content: 'Bonjour ! Je suis votre assistant juridique spécialisé en droit OHADA et droit ivoirien. Comment puis-je vous aider aujourd\'hui ?',
-        sender: 'assistant',
-        timestamp: new Date()
+  const clearChat = useCallback(async () => {
+    if (!user) {
+      setMessages([getWelcomeMessage()]);
+      return;
+    }
+
+    try {
+      // Create new conversation
+      const { data: newConv, error } = await supabase
+        .from('chat_conversations')
+        .insert({
+          user_id: user.id,
+          title: 'Nouvelle conversation',
+          description: 'Consultation juridique OHADA'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating new conversation:', error);
+        return;
       }
-    ]);
-  }, []);
+
+      setCurrentConversationId(newConv.id);
+      const welcomeMessage = getWelcomeMessage();
+      setMessages([welcomeMessage]);
+      
+      // Save welcome message to new conversation
+      await saveMessageToDatabase(welcomeMessage, newConv.id);
+
+    } catch (error) {
+      console.error('Error in clearChat:', error);
+    }
+  }, [user]);
 
   return {
     messages,
     isTyping: isTyping || isSearching,
+    isLoading,
     canSendMessage: canSendMessage(),
     sendMessage,
     clearChat
