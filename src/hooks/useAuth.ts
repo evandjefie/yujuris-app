@@ -53,14 +53,16 @@ export const useAuth = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Get or create user profile
-      let { data: profile, error } = await supabase
+      let { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
-        .single();
+        .limit(1);
+
+      let profile = profiles && profiles.length > 0 ? profiles[0] : null;
 
       // Si le profil n'existe pas, essayer de le créer
-      if (error && error.code === 'PGRST116') {
+      if (!profile) {
         console.log('Profil non trouvé, création en cours...');
         
         const { error: createError } = await supabase.rpc('create_user_profile', {
@@ -73,12 +75,12 @@ export const useAuth = () => {
           console.error('Erreur lors de la création du profil:', createError);
         } else {
           // Récupérer le profil créé
-          const { data: newProfile } = await supabase
+          const { data: newProfiles } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', supabaseUser.id)
-            .single();
-          profile = newProfile;
+            .limit(1);
+          profile = newProfiles && newProfiles.length > 0 ? newProfiles[0] : null;
         }
       } else if (error) {
         console.error('Erreur lors de la récupération du profil:', error);
